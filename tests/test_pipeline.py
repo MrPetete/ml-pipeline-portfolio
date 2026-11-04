@@ -3,8 +3,9 @@ import pandas as pd
 import pytest
 from sklearn.linear_model import LogisticRegression
 
-from src.etl import RAW, extract, transform
+from src.etl import RAW, ROOT, extract, transform
 from src.pipeline import TARGET, make_pipeline, split_columns
+from src.predict import score
 
 needs_data = pytest.mark.skipif(not (RAW / "Telco_customer_churn_status.csv").exists(), reason="raw data missing")
 
@@ -30,3 +31,22 @@ def test_pipeline_handles_missing_and_unseen_category():
     new.loc[new.index[1], num[0]] = np.nan
     p = pipe.predict_proba(new)[:, 1]
     assert p.shape == (5,) and ((p >= 0) & (p <= 1)).all()
+
+
+MODEL = ROOT / "models" / "best_model.pkl"
+SAMPLE = ROOT / "data" / "sample_customers.csv"
+needs_model = pytest.mark.skipif(not (MODEL.exists() and SAMPLE.exists()), reason="model or sample missing")
+
+
+@needs_model
+def test_predict_scores_sample_and_ignores_unused_columns():
+    s = pd.read_csv(SAMPLE).drop(columns=["Customer ID", "City"])
+    out = score(s)
+    assert len(out) == len(s) and out["churn_probability"].between(0, 1).all()
+    assert set(out["churn_predicted"]) <= {0, 1}
+
+
+@needs_model
+def test_predict_rejects_missing_column():
+    with pytest.raises(ValueError, match="Contract"):
+        score(pd.read_csv(SAMPLE).drop(columns=["Contract"]))

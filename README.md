@@ -1,6 +1,6 @@
 # Telecom Customer Churn Prediction
 
-End-to-end machine learning workflow and production pipeline for predicting customer churn in the telecommunications industry.
+Machine learning project: predict telecom customer churn, find what drives it, and package the model as a reusable scikit-learn pipeline.
 
 **Portfolio project** | Codecademy Machine Learning Career Path
 
@@ -11,8 +11,8 @@ End-to-end machine learning workflow and production pipeline for predicting cust
 ### Goals
 
 1. Predict whether a customer will churn (leave the service) in the next quarter.
-2. Identify the most important features driving churn to inform retention strategies.
-3. Build a productionalizable pipeline using scikit-learn that can be deployed to score new customers.
+2. Find what drives churn so the business can prioritize retention efforts.
+3. Package the model as a scikit-learn pipeline that can score new customers.
 
 ### Data
 
@@ -21,7 +21,7 @@ End-to-end machine learning workflow and production pipeline for predicting cust
 - **7,043 customers** from Q3 in California
 - **Five tables** merged on Customer ID: demographics, location, population, services, status
 - **Target:** `Churn` (1 = churned, 0 = stayed), **26.5% churn rate**
-- **40 features** after ETL: demographics (age, gender, dependents), services (phone, internet, streaming), contract terms, billing, tenure, location, population
+- **35 features** used by the model: demographics (age, gender, dependents), services (phone, internet, streaming), contract terms, billing, tenure, zip-level population. Customer ID, city, zip code and coordinates are excluded.
 
 **Known limitations:**
 - Single quarter snapshot (no temporal trends)
@@ -45,7 +45,7 @@ End-to-end machine learning workflow and production pipeline for predicting cust
 .
 ├── data/
 │   ├── sample_customers.csv  # 20 held-out rows for trying the CLI
-│   ├── raw/                # Original six CSV files from IBM
+│   ├── raw/                # Original five IBM tables
 │   └── processed/          # churn.csv after ETL
 ├── notebooks/
 │   └── churn_analysis.ipynb  # End-to-end workflow
@@ -104,7 +104,7 @@ Stratified 60/20/20 train/validation/test split. Model selection on 5-fold CV an
 | Accuracy | 0.84 |
 | Churn precision / recall | 0.69 / 0.74 |
 
-The decision threshold (0.645) was chosen on the validation set, not the test set.
+I picked the decision threshold (0.645) on the validation set, not the test set, to avoid overfitting.
 
 **Top drivers** (permutation importance, drop in test AUC): contract type (0.129), number of referrals (0.071), number of dependents (0.026), tenure (0.016), monthly charge (0.014).
 
@@ -117,9 +117,9 @@ The decision threshold (0.645) was chosen on the validation set, not the test se
 ## Next Steps and Limitations
 
 **Limitations:**
-- The data is a fictional IBM sample. A 0.91 AUC is likely higher than a real telecom would see, so absolute scores should not be compared with real-world churn models.
+- The data is a fictional IBM sample, so the 0.91 AUC is likely higher than a real telecom would see. Don't compare these numbers to production churn models.
 - Single quarter snapshot: no temporal validation, so drift over time is untested.
-- Class imbalance (26.5% churn) handled with class weights and a tuned threshold only.
+- Class imbalance (26.5% churn) was handled with class weights and a tuned threshold, not SMOTE or undersampling.
 - City, zip code and coordinates were dropped rather than encoded.
 - Logistic regression reaches 0.896 validation AUC, so XGBoost adds about 0.013. A simpler model may be the better production choice.
 
