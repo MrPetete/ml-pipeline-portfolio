@@ -12,8 +12,9 @@ def score(df: pd.DataFrame, model_path: Path = MODEL) -> pd.DataFrame:
     missing = set(art["columns"]) - set(df.columns)
     if missing:
         raise ValueError(f"missing columns: {sorted(missing)}")
+    # Class weights inflate these values: use them to rank customers, not as calibrated probabilities.
     p = art["pipeline"].predict_proba(df[art["columns"]])[:, 1]
-    out = df.assign(churn_probability=p.round(4), churn_predicted=(p >= art["threshold"]).astype(int))
+    out = df.assign(churn_score=p.round(4), churn_predicted=(p >= art["threshold"]).astype(int))
     return out
 
 
@@ -21,5 +22,5 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.exit("usage: python -m src.predict <customers.csv>")
     res = score(pd.read_csv(sys.argv[1]))
-    cols = [c for c in ("Customer ID",) if c in res] + ["churn_probability", "churn_predicted"]
+    cols = [c for c in ("Customer ID",) if c in res] + ["churn_score", "churn_predicted"]
     print(res[cols].to_string(index=False))

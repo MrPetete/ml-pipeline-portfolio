@@ -4,8 +4,13 @@ import numpy as np
 
 def backtest(churned, value, score, k, save_rate, cost):
     """Net value of contacting the top-k by score. Only customers who really churned yield revenue."""
-    idx = np.argsort(-np.asarray(score))[:k]
-    return float((np.asarray(churned)[idx] * np.asarray(value)[idx]).sum() * save_rate - k * cost)
+    churned, value, score = map(np.asarray, (churned, value, score))
+    if not len(churned) == len(value) == len(score):
+        raise ValueError("churned, value and score must have the same length")
+    if not 0 <= k <= len(churned):
+        raise ValueError(f"k must be between 0 and {len(churned)}, got {k}")
+    idx = np.argsort(-score)[:k]
+    return float((churned[idx] * value[idx]).sum() * save_rate - k * cost)
 
 
 def random_backtest(churned, value, k, save_rate, cost, n=500, seed=0):

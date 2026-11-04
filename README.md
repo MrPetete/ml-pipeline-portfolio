@@ -108,6 +108,8 @@ Stratified 60/20/20 train/validation/test split. Model selection on 5-fold CV an
 
 I picked the decision threshold (0.645) on the validation set, not the test set, to avoid overfitting.
 
+`python -m src.predict` prints `churn_score` and `churn_predicted`. The score ranks customers but is not a calibrated probability: it averages 0.375 on the test set against 26.5% actual churn (see the retention notebook). `churn_predicted` applies the 0.645 threshold.
+
 **Top drivers** (permutation importance, drop in test AUC): contract type (0.129), number of referrals (0.071), number of dependents (0.026), tenure (0.016), monthly charge (0.014).
 
 ![Evaluation](reports/eval.png)
@@ -122,7 +124,7 @@ I picked the decision threshold (0.645) on the validation set, not the test set,
 
 - **Calibration:** the trained model predicted 37.5% churn on average against 26.5% actual, because of class weights. Sigmoid calibration brought it to 26.5% (Brier 0.1225 to 0.1043) with AUC unchanged.
 - **Targeting:** contacting the 300 highest-scored customers nets about $283k, against $93k for 300 random contacts.
-- **CLTV weighting:** ranking by probability x CLTV beats ranking by probability alone by 24% at k=50 and 5% at k=200. From k=300 up there is no gain.
+- **CLTV weighting:** ranking by probability x CLTV beats ranking by probability alone by 24% at k=50 and 5% at k=200. From k=300 up the two rankings are within 1.5% of each other.
 - **Sensitivity:** at k=300 the campaign loses money with a 5% save rate once a contact costs $300. The save rate should be measured with an A/B test.
 
 ![Net value vs budget](reports/retention.png)

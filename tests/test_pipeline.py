@@ -6,7 +6,7 @@ from sklearn.linear_model import LogisticRegression
 from src.etl import RAW, ROOT, extract, transform
 from src.pipeline import TARGET, make_pipeline, split_columns
 from src.predict import score
-from src.retention import backtest
+from src.retention import backtest, random_backtest
 
 needs_data = pytest.mark.skipif(not (RAW / "Telco_customer_churn_status.csv").exists(), reason="raw data missing")
 
@@ -43,7 +43,7 @@ needs_model = pytest.mark.skipif(not (MODEL.exists() and SAMPLE.exists()), reaso
 def test_predict_scores_sample_and_ignores_unused_columns():
     s = pd.read_csv(SAMPLE).drop(columns=["Customer ID", "City"])
     out = score(s)
-    assert len(out) == len(s) and out["churn_probability"].between(0, 1).all()
+    assert len(out) == len(s) and out["churn_score"].between(0, 1).all()
     assert set(out["churn_predicted"]) <= {0, 1}
 
 
@@ -58,3 +58,16 @@ def test_backtest_counts_only_real_churners_and_charges_every_contact():
     # top 2 by score = customers 0 and 1; only customer 0 churned: 0.5*100 - 2*10 = 30
     assert backtest(churned, value, score_, 2, 0.5, 10) == 30
     assert backtest(churned, value, score_, 0, 0.5, 10) == 0
+
+
+def test_backtest_rejects_bad_input():
+    c, v, s = [1, 0, 1], [10, 20, 30], [0.9, 0.5, 0.1]
+    for args in ((c, v, s, -1), (c, v, s, 4), (c, v, s[:2], 2), (c, v[:2], s, 2)):
+        with pytest.raises(ValueError):
+            backtest(*args, 0.5, 1)
+
+
+def test_random_backtest_is_seeded_and_matches_backtest_when_everyone_is_contacted():
+    c, v = [1, 0, 1, 0], [100, 500, 200, 50]
+    assert random_backtest(c, v, 2, 0.5, 10) == random_backtest(c, v, 2, 0.5, 10)
+    assert random_backtest(c, v, 4, 0.5, 10) == pytest.approx(backtest(c, v, [0] * 4, 4, 0.5, 10))
