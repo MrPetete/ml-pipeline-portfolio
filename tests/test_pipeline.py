@@ -6,6 +6,7 @@ from sklearn.linear_model import LogisticRegression
 from src.etl import RAW, ROOT, extract, transform
 from src.pipeline import TARGET, make_pipeline, split_columns
 from src.predict import score
+from src.retention import backtest
 
 needs_data = pytest.mark.skipif(not (RAW / "Telco_customer_churn_status.csv").exists(), reason="raw data missing")
 
@@ -50,3 +51,10 @@ def test_predict_scores_sample_and_ignores_unused_columns():
 def test_predict_rejects_missing_column():
     with pytest.raises(ValueError, match="Contract"):
         score(pd.read_csv(SAMPLE).drop(columns=["Contract"]))
+
+
+def test_backtest_counts_only_real_churners_and_charges_every_contact():
+    churned, value, score_ = [1, 0, 1, 0], [100, 500, 200, 50], [0.9, 0.8, 0.1, 0.05]
+    # top 2 by score = customers 0 and 1; only customer 0 churned: 0.5*100 - 2*10 = 30
+    assert backtest(churned, value, score_, 2, 0.5, 10) == 30
+    assert backtest(churned, value, score_, 0, 0.5, 10) == 0

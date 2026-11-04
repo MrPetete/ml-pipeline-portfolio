@@ -1,0 +1,4 @@
+,AUC,Brier (lower is better),mean predicted churn
+as trained,0.9128,0.1225,0.3751
+calibrated,0.9134,0.1043,0.265
+actual churn rate,,,0.2654

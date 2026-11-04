@@ -48,10 +48,12 @@ Machine learning project: predict telecom customer churn, find what drives it, a
 │   ├── raw/                # Original five IBM tables
 │   └── processed/          # churn.csv after ETL
 ├── notebooks/
-│   └── churn_analysis.ipynb  # End-to-end workflow
+│   ├── churn_analysis.ipynb  # End-to-end workflow
+│   └── retention_decision.ipynb  # Calibration and campaign backtest
 ├── src/
 │   ├── etl.py              # Extract-Transform-Load
 │   ├── pipeline.py         # Feature preprocessing and Pipeline factory
+│   ├── retention.py        # Campaign backtest
 │   └── predict.py          # CLI for scoring new data
 ├── tests/
 │   └── test_pipeline.py    # Pipeline smoke tests
@@ -114,6 +116,20 @@ I picked the decision threshold (0.645) on the validation set, not the test set,
 
 ---
 
+## Retention decision
+
+`notebooks/retention_decision.ipynb` turns the scores into a campaign decision: if the team can contact only *k* customers, who should it call? It backtests on the held-out test set with each customer's real outcome. Assumptions are placeholders: a contact costs $20 and an offer saves 30% of customers who would otherwise leave. Value is IBM's CLTV field.
+
+- **Calibration:** the trained model predicted 37.5% churn on average against 26.5% actual, because of class weights. Sigmoid calibration brought it to 26.5% (Brier 0.1225 to 0.1043) with AUC unchanged.
+- **Targeting:** contacting the 300 highest-scored customers nets about $283k, against $93k for 300 random contacts.
+- **CLTV weighting:** ranking by probability x CLTV beats ranking by probability alone by 24% at k=50 and 5% at k=200. From k=300 up there is no gain.
+- **Sensitivity:** at k=300 the campaign loses money with a 5% save rate once a contact costs $300. The save rate should be measured with an A/B test.
+
+![Net value vs budget](reports/retention.png)
+![Calibration](reports/calibration.png)
+
+---
+
 ## Next Steps and Limitations
 
 **Limitations:**
@@ -125,7 +141,6 @@ I picked the decision threshold (0.645) on the validation set, not the test set,
 
 **Future extensions:**
 - Time-series split if multi-quarter data becomes available
-- Cost-sensitive learning (false negative = lost customer revenue)
 - SHAP explanations for interpretability
 - Deploy as REST API (FastAPI + Docker)
 
