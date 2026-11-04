@@ -1,0 +1,6 @@
+{
+  "model":"XGBoost",
+  "test_roc_auc":0.9127580149,
+  "test_pr_auc":0.7861609534,
+  "threshold":0.6453989744
+}
